@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.decryto.mapper.RoleMapper">
+
+    <!--角色管理列表-->
+    <select id="queryAllRole" resultMap="roleList">
+        select r.id,r.role_name,r.role_desc,u.user_name from
+        role r left join user u  on u.user_role_id=r.id;
+    </select>
+    <!--一对多-->
+    <resultMap id="roleList" type="role" autoMapping="true">
+        <id property="id" column="id"></id>
+        <result property="roleName" column="role_name"></result>
+        <result property="roleDesc" column="role_desc"></result>
+
+        <collection property="userList" ofType="user" autoMapping="true">
+            <id property="id" column="id"></id>
+            <result property="name" column="user_name"></result>
+        </collection>
+    </resultMap>
+
+    <delete id="delRole">
+        delete from role where id = #{id}
+    </delete>
+    <select id="findRoleById">
+        select * from role where id=#{id}
+    </select>
+    <!--  //通过主键查询角色 包含该角色对应的菜单节点列表
+  Role selectByPrimaryKey(Integer id);-->
+    <select id="selectByPrimaryKey" resultMap="roleMap">
+    select r.id as rid,r.role_name,rp.id as rpid ,p.id as pid,p.permit_name,p.permit_name as title ,p.permit_url,p.permit_parent_id,u.user_name ,u.id as uid
+    from role r left join  role_permit rp on r.id = rp.role_id
+    left join permit p on rp.permit_id = p.id
+    left join user u on u.user_role_id = r.id
+    where r.id = #{id}
+  </select>
+    <resultMap id="roleMap" type="role" autoMapping="true">
+        <id property="id" column="rid"></id>
+        <collection property="rolePermitList" ofType="rolePermit" autoMapping="true">
+            <id property="id" column="rpid"></id>
+            <association property="permit" javaType="Permit"  autoMapping="true">
+                <id property="id" column="pid"></id>
+            </association>
+        </collection>
+        <collection property="userList" ofType="User" autoMapping="true">
+            <id property="id" column="uid"></id>
+        </collection>
+    </resultMap>
+
+    <select id="selAllRole" resultType="role">
+        select * from role
+    </select>
+
+    <insert id="addRole">
+        insert into role(id,role_name) values(#{id},#{roleName})
+    </insert>
+
+    <select id="selByName" resultType="role">
+        select id from role where role_name=#{roleName}
+    </select>
+</mapper>

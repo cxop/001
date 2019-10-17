@@ -1,0 +1,210 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>用户列表 - QAdmin后台模板</title>
+    <link rel="stylesheet" href="./static/common/layui/css/layui.css" charset="utf-8">
+    <link rel="stylesheet" href="./static/admin/css/style.css">
+    <script src="./static/common/layui/layui.js" charset="utf-8"></script>
+    <script src="./static/common/jquery-3.3.1.min.js"></script>
+    <script src="./static/common/vue.min.js"></script>
+</head>
+<body>
+<div id="app1">
+    &lt;!&ndash;顶栏&ndash;&gt;
+    <header>
+        <h1 v-text="webname"></h1>
+        <div class="breadcrumb">
+            <i class="layui-icon">&#xe715;</i>
+            <ul>
+                <li v-for="vo in address">
+                    <a  v-text="vo.name" :href="vo.url" ></a> <span>/</span>
+                </li>
+            </ul>
+        </div>
+    </header>
+
+    <div class="main" id="app">
+        &lt;!&ndash;左栏&ndash;&gt;
+        <div class="left">
+            <ul class="cl" >
+                &lt;!&ndash;顶级分类&ndash;&gt;
+                <li v-for="vo,index in menu" :class="{hidden:vo.hidden}">
+                    <a href="javascript:;"  :class="{active:vo.active}"  @click="onActive(index)">
+                        <i class="layui-icon" v-html="vo.icon"></i>
+                        <span v-text="vo.name"></span>
+                        <i class="layui-icon arrow" v-show="vo.url.length==0">&#xe61a;</i> <i v-show="vo.active" class="layui-icon active">&#xe623;</i>
+                    </a>
+                    &lt;!&ndash;子级分类&ndash;&gt;
+                    <div v-for="vo2,index2 in vo.list">
+                        <a href="javascript:;" :class="{active:vo2.active}" @click="onActive(index,index2)" v-text="vo2.name"></a>
+                        <i v-show="vo2.active" class="layui-icon active">&#xe623;</i>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        &lt;!&ndash;右侧&ndash;&gt;
+        <div class="right">
+            <fieldset class="layui-elem-field layui-field-title">
+                <legend>管理员列表</legend>
+            </fieldset>
+            <div class="layui-btn" id="insert">添加管理员</div>
+            <!--数据表格-->
+            <table id="demo" lay-filter="test"></table>
+
+        </div>
+    </div>
+</div>
+
+<script src="./static/admin/js/config.js"></script>
+<script src="./static/admin/js/script.js"></script>
+
+<script>
+    layui.use('table', function(){
+        var table = layui.table;
+        //第一个实例
+        table.render({
+            elem: '#demo'
+            ,height: 312
+            ,url: 'userOper/findUserList' //数据接口
+           ,page: true //开启分页
+            ,cols: [[ //表头
+                //将 fieldbean中对应属性名      title 表格头部名
+                {field: 'id', title: 'ID', width:50, sort: true, fixed: 'left'}
+                ,{field: 'name', title: '名称',edit:"test", width:90}
+                ,{field: 'roleName', title: '角色名称', width:170, sort: true}
+
+                ,{field: 'permitParentId', title: '是否可用',edit:"test", width: 80,templet: function(d){
+                        var temp = "可用";
+                        if (d.status=="1"){
+                            temp="禁用";
+                        }
+                        return temp;
+                    }
+                }
+  /*              ,{field: 'createTime', title: '创建时间', width: 150, templet: function(d){
+                        return createTime(d.updateTime)
+                    } }
+                ,{field: 'updateTime', title: '更新时间', width: 150, sort: true,templet: function(d){
+                        return createTime(d.updateTime)
+                    }}*/
+                ,{field: '#', title: '操作', width: 180,toolbar: '#barDemo'}    /*加入修改和删除功能*/
+            ]]
+            //解析数据
+            ,parseData: function(res){ //res 即为原始返回的数据
+                //更换某一节点的数据
+                /* for (var i = 0;i< res.permitList.length;i++){
+                     if (res.permitList[i].permitParentId==1){
+                         res.permitList[i].permitParentId = '有';
+
+                     } else if(res.permitList[i].permitParentId==1){
+                         res.permitList[i].permitParentId = "无";
+                     }
+                 }*/
+                console.log(res);
+                return {
+                    "code": res.code, //解析接口状态
+                    "msg": res.message, //解析提示文本
+                    "count": res.count, //解析数据长度
+                    "data": res.userList //解析数据列表
+                };
+            }
+
+        });
+
+
+        /*可编辑状态*/
+        table.on('edit(test)', function(obj){ //注：edit是固定事件名，test是table原始容器的属性 lay-filter="对应的值"
+            console.log(obj.value); //得到修改后的值
+            console.log(obj.field); //当前编辑的字段名
+            console.log(obj.data); //所在行的所有相关数据
+            data = obj.data;
+
+
+        });
+        //监听工具条
+        table.on('tool(test)', function(obj){ //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
+            var data = obj.data; //获得当前行数据
+            var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+            var tr = obj.tr; //获得当前行 tr 的 DOM 对象（如果有的话）
+            if(layEvent === 'del'){ //删除
+                layer.confirm('真的删除行么', function(index){
+                    obj.del(); //删除对应行（tr）的DOM结构，并更新缓存
+                    layer.close(index);
+                    //向服务端发送删除指令
+                    delPermit(data.id,data.userRoleId);
+                });
+            } else if(layEvent === 'edit'){ //编辑
+                //do something
+                console.log(data);
+                /*提交数据库*/
+                udePermit(data.id,data.name);
+            } else if(layEvent === 'LAYTABLE_TIPS'){
+                layer.alert('Hi，头部工具栏扩展的右侧图标。');
+            }
+        });
+
+    });
+//添加管理员
+    layui.use("jquery",function () {
+        var $ = layui.jquery;
+        $("#insert").click(function () {
+            window.location.href="admin_add.html";
+        });
+    });
+    /*编辑函数*/
+    function udePermit(id,name) {
+        /* if(pid =="无"){
+             pid=0;
+         }else{
+             pid = 1;
+         }*/
+        $.post("userOper/uptUser",{
+            "name":name,
+            "id": id
+        },function (data) {
+            if (data=="1") {
+                alert("更新成功");
+            }else{
+                alert("更新失败")
+            }
+        },"json");
+    }
+    //删除函数
+    function delPermit(id,userRoleId) {
+        $.post("userOper/delPUser",{"id":id,"userRoleId":userRoleId},function (data1) {
+            if (data1.n1=="1" && data1.n2=="1"){
+                console.log(data1);
+                alert("修改成功");
+            }
+
+        },"json");
+    }
+    function createTime(v){
+        var date = new Date(v);
+        var y = date.getFullYear();
+        var m = date.getMonth()+1;
+        m = m<10?'0'+m:m;
+        var d = date.getDate();
+        d = d<10?("0"+d):d;
+        var h = date.getHours();
+        h = h<10?("0"+h):h;
+        var M = date.getMinutes();
+        M = M<10?("0"+M):M;
+        var str = y+"-"+m+"-"+d+" "+h+":"+M;
+        return str;
+    }
+</script>
+
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">确认编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+</body>
+</html>

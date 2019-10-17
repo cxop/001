@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="static/common/layui/css/layui.css">
+    <!--<script src="js/jquery-3.2.1.js"></script>-->
+</head>
+<body style="padding: 30px">
+
+
+角色名: <input type="text" name="name" id="username" style="margin-bottom: 10px">
+
+<div class="layui-btn-container">
+    <button type="button" class="layui-btn layui-btn-sm" lay-demo="getChecked">获取选中节点数据</button>
+    <button type="button" class="layui-btn layui-btn-sm" lay-demo="setChecked">勾选指定节点</button>
+    <button type="button" class="layui-btn layui-btn-sm" lay-demo="reload">重载实例</button>
+</div>
+角色权限
+<div id="test12" class="demo-tree-more"></div>
+<div class="layui-btn" id="commit">提交</div>
+
+<script src="static/common/layui/layui.js" charset="UTF-8"></script>
+
+<script>
+
+
+        var id= GetQueryString("id");
+        var treeNodeIds = new Array();
+        var n = 0;
+        layui.use(["jquery","layer"],function () {
+            var $ = layui.jquery;
+        $.post("role/initRolePermit",{"id":id},function(data1) {
+            console.log(data1);
+            var username = data1.role.roleName;
+            $("#username").val(username);
+            var array = new Array();
+            $.each(data1.role.rolePermitList,function (i,obj) {
+                //将权限id取出来
+                array[i] = obj.permit.id;
+            });
+
+            console.log(array);
+            layui.use(['tree', 'util'], function() {
+                var tree = layui.tree
+                    , layer = layui.layer
+                    , util = layui.util
+                    //模拟数据
+                    , data = data1.permitList;
+                //基本演示
+
+                tree.render({
+                    elem: '#test12'
+                    , data: data
+                    , showCheckbox: true  //是否显示复选框
+                    , id: 'demoId1'
+                    , isJump: true //是否允许点击节点时弹出新窗口跳转
+                    , click: function (obj) {
+                        var data = obj.data;  //获取当前点击的节点数据
+                        layer.msg("当前节点id"+data.id);
+
+                    }
+                });
+                var checkedData = tree.getChecked('demoId1');
+                //按钮事件
+                tree.setChecked('demoId1', array); //勾选指定节点
+                util.event('lay-demo', {
+                    getChecked: function (othis) {
+                        var checkedData = tree.getChecked('demoId1'); //获取选中节点的数据
+
+                            //封装获取节点id
+                                getNodesId(checkedData);
+                                console.log(treeNodeIds);
+                    }
+                    , setChecked: function () {
+                        tree.setChecked('demoId1', array); //勾选指定节点
+                    }
+                    , reload: function () {
+                        //重载实例
+                        tree.reload('demoId1', {});
+                    }
+                });
+            });
+        },"json");
+            $("#commit").click(function () {
+                var a = [];
+                a = treeNodeIds;
+
+                $.post("/rolePermit/upt",
+                    {
+                        "id":id,
+                        "roleName":$("#username").val(),
+                        "listId":a
+                    }
+                    ,function (d) {
+                       if(d>0){
+                           alert("修改成功");
+                           window.location.href="role_manager.html";
+                       }else{
+                           alert("修改失败");
+                       }
+                    },"json");
+            });
+    });
+        //监听提交数据库
+
+        //获取节点中id 递归获取
+        function getNodesId(nodes){
+            for(var j=0;j<nodes.length;j++){
+                if(nodes[j].children != undefined){//当前节点包含子节点
+                    getNodesId(nodes[j].children);//递归，获取当前节点的子节点的id
+                }else{
+                    treeNodeIds[n++] = nodes[j].id ;//当前节点id
+                }
+            }
+        }
+
+
+    //解析浏览器地址栏指定的参数
+   function GetQueryString(name) {
+        var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+        var r = window.location.search.substr(1).match(reg);
+        if(r!=null)return  unescape(r[2]); return null;
+    };
+    //双引号
+
+    /*function roleName(id) {
+        $.post("",{"id":id},
+            function (data) {
+            // 该处理数据了
+                console.log(data);
+        },"json");
+    }*/
+</script>
+</body>
+</html>

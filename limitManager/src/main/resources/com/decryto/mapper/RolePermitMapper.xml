@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.decryto.mapper.RolePermitMapper">
+
+
+    <delete id="delPermit">
+        delete from role_permit where role_id =#{id}
+    </delete>
+    <insert id="intPermit" parameterType="rolePermit">
+        insert into role_permit (role_id,permit_id) values 
+        <foreach collection="permitIdList" index="index" item="obj" separator=",">
+            (
+            #{obj.RoleId},#{obj.PermitId}
+            )
+        </foreach>
+    </insert>
+
+
+</mapper>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.decryto.mapper.PermitMapper">
+    <!--设置匹配字段-->
+    <resultMap id="BaseResultMap" type="com.decryto.bean.Permit">
+        <id column="ID" jdbcType="INTEGER" property="id" />
+        <result column="permit_name" jdbcType="VARCHAR" property="permitName" />
+        <result column="permit_type" jdbcType="VARCHAR" property="permitType" />
+        <result column="permit_url" jdbcType="VARCHAR" property="permitUrl" />
+        <result column="permit_code" jdbcType="VARCHAR" property="permitCode" />
+        <result column="is_left" jdbcType="VARCHAR" property="permitleft" />
+        <result column="permit_parent_id" jdbcType="VARCHAR" property="permitParentId" />
+        <result column="permit_parent_ids" jdbcType="VARCHAR" property="permitParamentIds" />
+        <result column="sub_enable" jdbcType="VARCHAR" property="subEnable" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+        <result column="title" jdbcType="VARCHAR" property="title" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+    ID, permit_name, permit_type, permit_url, permit_code, is_left, permit_parent_id,
+    permit_parent_ids, sub_enable, create_time, update_time
+  </sql>
+    <!--新增菜单-->
+    <insert id="insert" parameterType="permit">
+        insert into permit(permit_name,permit_url,is_left,permit_parent_id) values
+        (#{permitName},#{permitUrl},#{permitleft},#{permitParentId})
+
+
+    </insert>
+    <!--修改-->
+    <update id="updateByPrimaryKey">
+        update permit set permit_name=#{permitName},
+        permit_url=#{permitUrl},permit_parent_id=#{permitParentId},
+        create_time=#{createTime},update_time=#{updateTime},permit_type=#{permitType},
+        update_time=now()
+         where id = #{id}
+    </update>
+    <delete id="deleteByPermaryKey">
+        delete from permit where id = #{id}
+    </delete>
+    <select id="selectByPermaryKey">
+        select * from permit where id = #{id}
+    </select>
+
+    <!--查询权限, 树形列表-->
+    <select id="queryPermit" resultType="permit">
+         select permit.* ,permit.permit_name title from permit
+        join role_permit  on permit.id = role_permit.permit_id
+        join user  on  role_permit.role_id = user.user_role_id
+        where  user.id = #{id}
+    </select>
+    <select id="findAllPermit" resultType="permit">
+        select p.*,p.permit_name as title from permit p
+    </select>
+    <select id="findListNotLeaf" resultType="permit">
+        select * from permit where is_left='false'
+    </select>
+    <!--分页-->
+
+
+</mapper>
